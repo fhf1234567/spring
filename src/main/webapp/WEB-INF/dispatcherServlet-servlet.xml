@@ -17,48 +17,35 @@
          http://www.springframework.org/schema/cache
          http://www.springframework.org/schema/cache/spring-cache.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd">
 
-    <mvc:annotation-driven conversion-service="conversionService"/>
+    <mvc:annotation-driven/>
+    <context:component-scan base-package="com.smart"/>
 
-    <context:component-scan base-package="com.itcast"/>
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close"
+          p:driverClassName="com.mysql.jdbc.Driver"
+          p:url="jdbc:mysql://localhost:3306/test"
+          p:username="root"
+          p:password=""/>
+
+    <!--trasaction manager-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+    p:dataSource-ref="dataSource"/>
+
+    <aop:config proxy-target-class="true">
+        <aop:pointcut id="serviceMethod" expression=" execution( * com.smart.service..*(..))"></aop:pointcut>
+        <aop:advisor pointcut-ref="serviceMethod" advice-ref="txAdvice"></aop:advisor>
+    </aop:config>
+    
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate"
+          p:dataSource-ref="dataSource"/>
+
     <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
         <property name="prefix" value="/WEB-INF/views/"/>
         <property name="suffix" value=".jsp"/>
     </bean>
-
-    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close"
-    p:driverClassName="com.mysql.jdbc.Driver"
-    p:url="jdbc:mysql://localhost:3306/test"
-    p:username="root"
-    p:password=""/>
-
-    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate"
-    p:dataSource-ref="dataSource"/>
-
-    <!--peizhi ConversionService-->
-    <bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
-        <property name="converters">
-            <set>
-                <ref bean="employeeConverter"/>
-            </set>
-        </property>
-    </bean>
-
-
-    <!--配置视图解析器-->
-    <!--通过order属性来定义视图的优先级 order越小优先级越高-->
-    <bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
-        <property name="order" value="100"/>
-    </bean>
-
-    <!--配置国际化资源文件-->
-    <bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-        <property name="basename" value="i18n"/>
-    </bean>
-
-    <mvc:default-servlet-handler></mvc:default-servlet-handler>
-    <!-- 获取本地 -->
-    <bean id="localeResolver" class="org.springframework.web.servlet.i18n.CookieLocaleResolver"/>
-    <!--可以直接响应转发的页面而无需再经过handler方法-->
-    <mvc:view-controller path="/hello" view-name="success"/>
-    <!--在实际开发中常需要配置此标签-->
 </beans>
